@@ -22,6 +22,14 @@ class Categorical(distributions.Base):
         self._probs = probabilities / probabilities.sum(-1, True)
 
     @property
+    def is_continuous(self) -> bool:
+        return False
+
+    @property
+    def is_discrete(self) -> bool:
+        return True
+
+    @property
     def shape(self) -> Tuple[int, ...]:
         return self._probs.shape[:-1]
 
@@ -36,7 +44,7 @@ class Categorical(distributions.Base):
     def sample(self, *shape: Tuple[int, ...]) -> torch.Tensor:
         return torchaddons.random.choice(self._probs.expand(shape + self._probs.shape))
 
-    def _include_discrete_mask(self, mask: distributions.constraints.DiscreteMask):
+    def _include_discrete_mask(self, mask: distributions.constraints.CategoricalMask):
         if mask.mask.shape != self._probs.shape:
             raise ValueError("Discrete mask does not match the shape of the distribution.")
         
@@ -44,7 +52,7 @@ class Categorical(distributions.Base):
         self._probs /= self._probs.sum(-1, keepdim=True)
 
     def include_constraint(self, constraint: distributions.constraints.Base) -> bool:
-        if isinstance(constraint, distributions.constraints.DiscreteMask):
+        if isinstance(constraint, distributions.constraints.CategoricalMask):
             self._include_discrete_mask(constraint)
             return True
         return super().include_constraint(constraint)

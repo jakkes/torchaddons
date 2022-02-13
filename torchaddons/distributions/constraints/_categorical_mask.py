@@ -3,7 +3,7 @@ from torchaddons import distributions
 from torchaddons.distributions import constraints
 
 
-class DiscreteMask(constraints.Base):
+class CategoricalMask(constraints.Base):
     def __init__(self, mask: torch.Tensor) -> None:
         super().__init__()
         self._mask = mask

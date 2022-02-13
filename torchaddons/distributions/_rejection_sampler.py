@@ -24,6 +24,14 @@ class RejectionSampler(distributions.Base):
         self._distribution = distribution
         self._constraints = list(constraints)
 
+    @property
+    def is_continuous(self) -> bool:
+        return self._distribution.is_continuous
+
+    @property
+    def is_discrete(self) -> bool:
+        return self._distribution.is_discrete
+
     def add_constraint(self, constraint: distributions.constraints.Base):
         """Adds a constraint to the rejection sampling.
 

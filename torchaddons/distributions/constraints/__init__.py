@@ -1,5 +1,6 @@
 from ._base import Base
-from ._discrete_mask import DiscreteMask
+from ._categorical_mask import CategoricalMask
+from ._lower_bound import LowerBound
 
 
-__all__ = ["Base", "DiscreteMask"]
+__all__ = ["Base", "CategoricalMask", "LowerBound"]

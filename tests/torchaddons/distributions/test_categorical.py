@@ -16,7 +16,7 @@ def run_single(device: torch.device):
 
     mask = torch.ones(10, device=device, dtype=torch.bool)
     mask[torch.randperm(10)[:3]] = False
-    constraint = distributions.constraints.DiscreteMask(mask)
+    constraint = distributions.constraints.CategoricalMask(mask)
     d = constraint.apply_to(d)
     
     x1 = d.sample(13, 17, 19)
@@ -43,7 +43,7 @@ def run_batch(device: torch.device):
 
     mask = torch.ones(3, 5, 7, 10, device=device, dtype=torch.bool)
     mask[:, :, :, torch.randperm(10)[:5]] = False
-    constraint = distributions.constraints.DiscreteMask(mask)
+    constraint = distributions.constraints.CategoricalMask(mask)
     d = constraint.apply_to(d)
     
     x1 = d.sample(13, 17, 19)

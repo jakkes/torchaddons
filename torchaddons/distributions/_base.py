@@ -10,6 +10,18 @@ from . import constraints
 class Base(abc.ABC):
     """Base class for distributions."""
 
+    @property
+    @abc.abstractmethod
+    def is_continuous(self) -> bool:
+        """True if the distribution is continuous."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def is_discrete(self) -> bool:
+        """True if the distribution is discrete."""
+        pass
+
     @abc.abstractmethod
     def sample(self, *shape: Tuple[int, ...]) -> torch.Tensor:
         """Samples the distribution.
