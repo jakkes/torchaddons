@@ -23,5 +23,5 @@ def choice(probabilities: torch.Tensor) -> torch.Tensor:
     if probabilities.isnan().any():
         raise ValueError("`choice` received NaN values.")
     cumsummed = (probabilities / probabilities.sum(-1, keepdim=True)).cumsum(-1)
-    r = torch.rand(probabilities.shape[:-1]).unsqueeze_(-1)
+    r = torch.rand(probabilities.shape[:-1], device=probabilities.device).unsqueeze_(-1)
     return (r > cumsummed).sum(-1)

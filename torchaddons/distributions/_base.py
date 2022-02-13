@@ -11,7 +11,7 @@ class Base(abc.ABC):
     """Base class for distributions."""
 
     @abc.abstractmethod
-    def sample(self, shape: Tuple[int, ...] = ()) -> torch.Tensor:
+    def sample(self, *shape: Tuple[int, ...]) -> torch.Tensor:
         """Samples the distribution.
 
         Args:
@@ -30,13 +30,21 @@ class Base(abc.ABC):
         """Shape of the output, if called with no extra batch dimensions."""
         pass
 
-    def apply_constraint(self, constraint: constraints.Base) -> "distributions.Base":
-        """Applies a constraint to the distribution.
+    @abc.abstractmethod
+    def clone(self) -> "distributions.Base":
+        pass
+
+    def include_constraint(self, constraint: constraints.Base) -> bool:
+        """Constraints should not be added by calling this method. Instead, call
+        `constraint.apply_to(distribution)`.
 
         Args:
-            constraint (constraints.Base): constraint to apply.
+            constraint (constraints.Base): Constraint to include.
 
         Returns:
-            distributions.Base: New distribution object respecting the given constraint.
+            bool: True if the constraint was successfully included, otherwise False.
         """
-        return distributions.RejectionSampler(self, constraint)
+        if isinstance(self, distributions.RejectionSampler):
+            self.add_constraint(constraint)
+            return True
+        return False

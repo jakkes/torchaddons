@@ -24,9 +24,12 @@ class RejectionSampler(distributions.Base):
         self._distribution = distribution
         self._constraints = list(constraints)
 
-    def apply_constraint(
-        self, constraint: distributions.constraints.Base
-    ) -> "distributions.Base":
+    def add_constraint(self, constraint: distributions.constraints.Base):
+        """Adds a constraint to the rejection sampling.
+
+        Args:
+            constraint (distributions.constraints.Base): Constraint to add.
+        """
         self._constraints.append(constraint)
 
     def sample(self, shape: Tuple[int, ...] = ()) -> torch.Tensor:
