@@ -31,7 +31,7 @@ def set_version(version):
 
     with open("setup.cfg", "r") as f:
         data = f.read()
-    data.replace("<%<%VERSION%>%>", version)
+    data.replace("<<VERSION>>", version)
     with open("setup.cfg", "w") as f:
         f.write(data)
 
