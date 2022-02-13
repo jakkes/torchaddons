@@ -29,6 +29,12 @@ def set_version(version):
     with open("torchaddons/__init__.py", "w") as f:
         f.write(data)
 
+    with open("setup.cfg", "r") as f:
+        data = f.read()
+    data.replace("<%<%VERSION%>%>", version)
+    with open("setup.cfg", "w") as f:
+        f.write(data)
+
 
 def main():
     with open("VERSION", "r") as f:
