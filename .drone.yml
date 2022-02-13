@@ -7,6 +7,7 @@ steps:
 - name: test and docs
   image: python:3.8-slim
   commands:
+  - pip install --upgrade pip
   - pip install -r requirements.txt
   - pytest
   - rm -rf ./docs/torchaddons/
@@ -20,6 +21,7 @@ steps:
     PYPI_PASSWORD:
       from_secret: PYPI_PASSWORD
   commands:
+    - pip install --upgrade pip
     - pip install twine requests build -r requirements.txt
     - python scripts/publish_if_new_version.py
 - name: push
