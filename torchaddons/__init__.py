@@ -1,3 +1,5 @@
+__version__ = "<%<%VERSION%>%>"
+
 from . import random, distributions
 
 
