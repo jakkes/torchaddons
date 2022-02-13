@@ -64,6 +64,18 @@ __all__ = [&#34;Base&#34;, &#34;RejectionSampler&#34;, &#34;Categorical&#34;, &#
 <pre><code class="python">class Base(abc.ABC):
     &#34;&#34;&#34;Base class for distributions.&#34;&#34;&#34;
 
+    @property
+    @abc.abstractmethod
+    def is_continuous(self) -&gt; bool:
+        &#34;&#34;&#34;True if the distribution is continuous.&#34;&#34;&#34;
+        pass
+
+    @property
+    @abc.abstractmethod
+    def is_discrete(self) -&gt; bool:
+        &#34;&#34;&#34;True if the distribution is discrete.&#34;&#34;&#34;
+        pass
+
     @abc.abstractmethod
     def sample(self, *shape: Tuple[int, ...]) -&gt; torch.Tensor:
         &#34;&#34;&#34;Samples the distribution.
@@ -114,6 +126,34 @@ __all__ = [&#34;Base&#34;, &#34;RejectionSampler&#34;, &#34;Categorical&#34;, &#
 </ul>
 <h3>Instance variables</h3>
 <dl>
+<dt id="torchaddons.distributions.Base.is_continuous"><code class="name">var <span class="ident">is_continuous</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>True if the distribution is continuous.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+@abc.abstractmethod
+def is_continuous(self) -&gt; bool:
+    &#34;&#34;&#34;True if the distribution is continuous.&#34;&#34;&#34;
+    pass</code></pre>
+</details>
+</dd>
+<dt id="torchaddons.distributions.Base.is_discrete"><code class="name">var <span class="ident">is_discrete</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>True if the distribution is discrete.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+@abc.abstractmethod
+def is_discrete(self) -&gt; bool:
+    &#34;&#34;&#34;True if the distribution is discrete.&#34;&#34;&#34;
+    pass</code></pre>
+</details>
+</dd>
 <dt id="torchaddons.distributions.Base.shape"><code class="name">var <span class="ident">shape</span> : Tuple[int, ...]</code></dt>
 <dd>
 <div class="desc"><p>Shape of the output, if called with no extra batch dimensions.</p></div>
@@ -252,6 +292,14 @@ the last dimension. Must be non-negative.</dd>
         self._probs = probabilities / probabilities.sum(-1, True)
 
     @property
+    def is_continuous(self) -&gt; bool:
+        return False
+
+    @property
+    def is_discrete(self) -&gt; bool:
+        return True
+
+    @property
     def shape(self) -&gt; Tuple[int, ...]:
         return self._probs.shape[:-1]
 
@@ -266,7 +314,7 @@ the last dimension. Must be non-negative.</dd>
     def sample(self, *shape: Tuple[int, ...]) -&gt; torch.Tensor:
         return torchaddons.random.choice(self._probs.expand(shape + self._probs.shape))
 
-    def _include_discrete_mask(self, mask: distributions.constraints.DiscreteMask):
+    def _include_discrete_mask(self, mask: distributions.constraints.CategoricalMask):
         if mask.mask.shape != self._probs.shape:
             raise ValueError(&#34;Discrete mask does not match the shape of the distribution.&#34;)
         
@@ -274,7 +322,7 @@ the last dimension. Must be non-negative.</dd>
         self._probs /= self._probs.sum(-1, keepdim=True)
 
     def include_constraint(self, constraint: distributions.constraints.Base) -&gt; bool:
-        if isinstance(constraint, distributions.constraints.DiscreteMask):
+        if isinstance(constraint, distributions.constraints.CategoricalMask):
             self._include_discrete_mask(constraint)
             return True
         return super().include_constraint(constraint)</code></pre>
@@ -286,6 +334,30 @@ the last dimension. Must be non-negative.</dd>
 </ul>
 <h3>Instance variables</h3>
 <dl>
+<dt id="torchaddons.distributions.Categorical.is_continuous"><code class="name">var <span class="ident">is_continuous</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>True if the distribution is continuous.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def is_continuous(self) -&gt; bool:
+    return False</code></pre>
+</details>
+</dd>
+<dt id="torchaddons.distributions.Categorical.is_discrete"><code class="name">var <span class="ident">is_discrete</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>True if the distribution is discrete.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def is_discrete(self) -&gt; bool:
+    return True</code></pre>
+</details>
+</dd>
 <dt id="torchaddons.distributions.Categorical.probabilities"><code class="name">var <span class="ident">probabilities</span> : torch.Tensor</code></dt>
 <dd>
 <div class="desc"><p>Probabilities of the categories.</p></div>
@@ -348,7 +420,7 @@ def shape(self) -&gt; Tuple[int, ...]:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def include_constraint(self, constraint: distributions.constraints.Base) -&gt; bool:
-    if isinstance(constraint, distributions.constraints.DiscreteMask):
+    if isinstance(constraint, distributions.constraints.CategoricalMask):
         self._include_discrete_mask(constraint)
         return True
     return super().include_constraint(constraint)</code></pre>
@@ -417,6 +489,14 @@ this argument prepends <em>further</em> batches.</dd>
         self._distribution = distribution
         self._constraints = list(constraints)
 
+    @property
+    def is_continuous(self) -&gt; bool:
+        return self._distribution.is_continuous
+
+    @property
+    def is_discrete(self) -&gt; bool:
+        return self._distribution.is_discrete
+
     def add_constraint(self, constraint: distributions.constraints.Base):
         &#34;&#34;&#34;Adds a constraint to the rejection sampling.
 
@@ -450,6 +530,33 @@ this argument prepends <em>further</em> batches.</dd>
 <li>torchaddons.distributions._base.Base</li>
 <li>abc.ABC</li>
 </ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="torchaddons.distributions.RejectionSampler.is_continuous"><code class="name">var <span class="ident">is_continuous</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>True if the distribution is continuous.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def is_continuous(self) -&gt; bool:
+    return self._distribution.is_continuous</code></pre>
+</details>
+</dd>
+<dt id="torchaddons.distributions.RejectionSampler.is_discrete"><code class="name">var <span class="ident">is_discrete</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>True if the distribution is discrete.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def is_discrete(self) -&gt; bool:
+    return self._distribution.is_discrete</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="torchaddons.distributions.RejectionSampler.add_constraint"><code class="name flex">
@@ -542,18 +649,22 @@ this argument prepends <em>further</em> batches.</dd>
 <ul>
 <li>
 <h4><code><a title="torchaddons.distributions.Base" href="#torchaddons.distributions.Base">Base</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="torchaddons.distributions.Base.clone" href="#torchaddons.distributions.Base.clone">clone</a></code></li>
 <li><code><a title="torchaddons.distributions.Base.include_constraint" href="#torchaddons.distributions.Base.include_constraint">include_constraint</a></code></li>
+<li><code><a title="torchaddons.distributions.Base.is_continuous" href="#torchaddons.distributions.Base.is_continuous">is_continuous</a></code></li>
+<li><code><a title="torchaddons.distributions.Base.is_discrete" href="#torchaddons.distributions.Base.is_discrete">is_discrete</a></code></li>
 <li><code><a title="torchaddons.distributions.Base.sample" href="#torchaddons.distributions.Base.sample">sample</a></code></li>
 <li><code><a title="torchaddons.distributions.Base.shape" href="#torchaddons.distributions.Base.shape">shape</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="torchaddons.distributions.Categorical" href="#torchaddons.distributions.Categorical">Categorical</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="torchaddons.distributions.Categorical.clone" href="#torchaddons.distributions.Categorical.clone">clone</a></code></li>
 <li><code><a title="torchaddons.distributions.Categorical.include_constraint" href="#torchaddons.distributions.Categorical.include_constraint">include_constraint</a></code></li>
+<li><code><a title="torchaddons.distributions.Categorical.is_continuous" href="#torchaddons.distributions.Categorical.is_continuous">is_continuous</a></code></li>
+<li><code><a title="torchaddons.distributions.Categorical.is_discrete" href="#torchaddons.distributions.Categorical.is_discrete">is_discrete</a></code></li>
 <li><code><a title="torchaddons.distributions.Categorical.probabilities" href="#torchaddons.distributions.Categorical.probabilities">probabilities</a></code></li>
 <li><code><a title="torchaddons.distributions.Categorical.sample" href="#torchaddons.distributions.Categorical.sample">sample</a></code></li>
 <li><code><a title="torchaddons.distributions.Categorical.shape" href="#torchaddons.distributions.Categorical.shape">shape</a></code></li>
@@ -563,6 +674,8 @@ this argument prepends <em>further</em> batches.</dd>
 <h4><code><a title="torchaddons.distributions.RejectionSampler" href="#torchaddons.distributions.RejectionSampler">RejectionSampler</a></code></h4>
 <ul class="">
 <li><code><a title="torchaddons.distributions.RejectionSampler.add_constraint" href="#torchaddons.distributions.RejectionSampler.add_constraint">add_constraint</a></code></li>
+<li><code><a title="torchaddons.distributions.RejectionSampler.is_continuous" href="#torchaddons.distributions.RejectionSampler.is_continuous">is_continuous</a></code></li>
+<li><code><a title="torchaddons.distributions.RejectionSampler.is_discrete" href="#torchaddons.distributions.RejectionSampler.is_discrete">is_discrete</a></code></li>
 <li><code><a title="torchaddons.distributions.RejectionSampler.sample" href="#torchaddons.distributions.RejectionSampler.sample">sample</a></code></li>
 </ul>
 </li>
