@@ -8,6 +8,9 @@ class DiscreteMask(constraints.Base):
         super().__init__()
         self._mask = mask
 
+    def check(self, value: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError
+
     @property
     def mask(self) -> torch.Tensor:
         """Boolean mask"""

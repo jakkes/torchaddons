@@ -37,7 +37,7 @@ class Categorical(distributions.Base):
         return torchaddons.random.choice(self._probs.expand(shape + self._probs.shape))
 
     def _include_discrete_mask(self, mask: distributions.constraints.DiscreteMask):
-        if mask.shape != self._probs.shape:
+        if mask.mask.shape != self._probs.shape:
             raise ValueError("Discrete mask does not match the shape of the distribution.")
         
         self._probs[~mask.mask] = 0.0
