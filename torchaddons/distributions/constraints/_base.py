@@ -29,3 +29,12 @@ class Base(abc.ABC):
         if distribution.include_constraint(self):
             return distribution
         return distributions.RejectionSampler(distribution, self)
+
+    @abc.abstractmethod
+    def clone(self) -> "distributions.constraints.Base":
+        """Clones the constraint.
+
+        Returns:
+            distributions.constraints.Base: Cloned object.
+        """
+        pass

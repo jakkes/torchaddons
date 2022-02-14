@@ -40,22 +40,35 @@ class RejectionSampler(distributions.Base):
         """
         self._constraints.append(constraint)
 
-    def sample(self, shape: Tuple[int, ...] = ()) -> torch.Tensor:
+    def sample(self, *shape: Tuple[int, ...]) -> torch.Tensor:
         def get_reducer(value: torch.Tensor):
             def reducer(
                 mask: torch.Tensor, constraint: distributions.constraints.Base
             ) -> torch.Tensor:
-                return mask & constraint.check()
+                return mask & constraint.check(value)
 
             return reducer
 
-        value = None
-        mask = torch.zeros(shape + self.shape, dtype=torch.bool, device=value.device)
-        while not mask.all():
-            value = super().sample(shape)
-            mask = functools.reduce(
-                get_reducer(value),
+        value = self._distribution.sample(*shape)
+        inv_mask = ~functools.reduce(
+            get_reducer(value),
+            self._constraints,
+            torch.ones(shape, dtype=torch.bool, device=value.device),
+        )
+        while inv_mask.any():
+            value[inv_mask] = self._distribution.sample(inv_mask.sum())
+            inv_mask[inv_mask.clone()] = ~ functools.reduce(
+                get_reducer(value[inv_mask]),
                 self._constraints,
-                torch.zeros(shape + self.shape, dtype=torch.bool, device=value.device),
+                torch.ones(inv_mask.sum(), dtype=torch.bool, device=value.device),
             )
         return value
+
+    @property
+    def shape(self) -> Tuple[int, ...]:
+        return self._distribution.shape
+
+    def clone(self) -> "RejectionSampler":
+        return RejectionSampler(
+            self._distribution.clone(), *(x.clone() for x in self._constraints)
+        )

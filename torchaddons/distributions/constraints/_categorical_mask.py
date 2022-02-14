@@ -15,3 +15,6 @@ class CategoricalMask(constraints.Base):
     def mask(self) -> torch.Tensor:
         """Boolean mask"""
         return self._mask
+
+    def clone(self) -> "distributions.constraints.CategoricalMask":
+        return CategoricalMask(self._mask.clone())
