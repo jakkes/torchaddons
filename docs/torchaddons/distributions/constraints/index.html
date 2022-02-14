@@ -29,9 +29,10 @@
 <pre><code class="python">from ._base import Base
 from ._categorical_mask import CategoricalMask
 from ._lower_bound import LowerBound
+from ._upper_bound import UpperBound
 
 
-__all__ = [&#34;Base&#34;, &#34;CategoricalMask&#34;, &#34;LowerBound&#34;]</code></pre>
+__all__ = [&#34;Base&#34;, &#34;CategoricalMask&#34;, &#34;LowerBound&#34;, &#34;UpperBound&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -76,7 +77,16 @@ __all__ = [&#34;Base&#34;, &#34;CategoricalMask&#34;, &#34;LowerBound&#34;]</cod
 
         if distribution.include_constraint(self):
             return distribution
-        return distributions.RejectionSampler(distribution, self)</code></pre>
+        return distributions.RejectionSampler(distribution, self)
+
+    @abc.abstractmethod
+    def clone(self) -&gt; &#34;distributions.constraints.Base&#34;:
+        &#34;&#34;&#34;Clones the constraint.
+
+        Returns:
+            distributions.constraints.Base: Cloned object.
+        &#34;&#34;&#34;
+        pass</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -146,6 +156,30 @@ def check(self, value: torch.Tensor) -&gt; torch.Tensor:
     pass</code></pre>
 </details>
 </dd>
+<dt id="torchaddons.distributions.constraints.Base.clone"><code class="name flex">
+<span>def <span class="ident">clone</span></span>(<span>self) ‑> torchaddons.distributions.constraints._base.Base</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Clones the constraint.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>distributions.constraints.Base</code></dt>
+<dd>Cloned object.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abc.abstractmethod
+def clone(self) -&gt; &#34;distributions.constraints.Base&#34;:
+    &#34;&#34;&#34;Clones the constraint.
+
+    Returns:
+        distributions.constraints.Base: Cloned object.
+    &#34;&#34;&#34;
+    pass</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 <dt id="torchaddons.distributions.constraints.CategoricalMask"><code class="flex name class">
@@ -169,7 +203,10 @@ def check(self, value: torch.Tensor) -&gt; torch.Tensor:
     @property
     def mask(self) -&gt; torch.Tensor:
         &#34;&#34;&#34;Boolean mask&#34;&#34;&#34;
-        return self._mask</code></pre>
+        return self._mask
+
+    def clone(self) -&gt; &#34;distributions.constraints.CategoricalMask&#34;:
+        return CategoricalMask(self._mask.clone())</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -207,6 +244,24 @@ def mask(self) -&gt; torch.Tensor:
     raise NotImplementedError</code></pre>
 </details>
 </dd>
+<dt id="torchaddons.distributions.constraints.CategoricalMask.clone"><code class="name flex">
+<span>def <span class="ident">clone</span></span>(<span>self) ‑> torchaddons.distributions.constraints._categorical_mask.CategoricalMask</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Clones the constraint.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>distributions.constraints.Base</code></dt>
+<dd>Cloned object.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def clone(self) -&gt; &#34;distributions.constraints.CategoricalMask&#34;:
+    return CategoricalMask(self._mask.clone())</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 <dt id="torchaddons.distributions.constraints.LowerBound"><code class="flex name class">
@@ -218,8 +273,7 @@ def mask(self) -&gt; torch.Tensor:
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>bound</code></strong> :&ensp;<code>torch.Tensor</code></dt>
-<dd>Lower bound, all elements must be greater (or equal)
-than this value.</dd>
+<dd>Bound.</dd>
 <dt><strong><code>allow_equal</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>If True, equal values are allowed. Defaults
 to True.</dd>
@@ -233,26 +287,75 @@ to True.</dd>
     def __init__(self, bound: torch.Tensor, allow_equal: bool = True) -&gt; None:
         &#34;&#34;&#34;
         Args:
-            bound (torch.Tensor): Lower bound, all elements must be greater (or equal)
-                than this value.
+            bound (torch.Tensor): Bound.
             allow_equal (bool, optional): If True, equal values are allowed. Defaults
                 to True.
         &#34;&#34;&#34;
         super().__init__()
         self._bound = bound
+        self._allow_equal = allow_equal
         self._scalar = len(bound.shape) == 0
         self._fn = torch.ge if allow_equal else torch.gt
+
+    @property
+    def bound(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Bound.&#34;&#34;&#34;
+        return self._bound
+
+    @property
+    def allow_equal(self) -&gt; bool:
+        &#34;&#34;&#34;If True, equal values are allowed.&#34;&#34;&#34;
+        return self._allow_equal
 
     def check(self, value: torch.Tensor) -&gt; torch.Tensor:
         if self._scalar:
             return self._fn(value, self._bound)
-        return self._fn(value, self._bound).all(-1)</code></pre>
+        return self._fn(value, self._bound).all(-1)
+
+    def clone(self) -&gt; &#34;constraints.LowerBound&#34;:
+        return LowerBound(
+            self._bound.clone(),
+            self._allow_equal
+        )</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>torchaddons.distributions.constraints._base.Base</li>
 <li>abc.ABC</li>
 </ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li>torchaddons.distributions.constraints._upper_bound.UpperBound</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="torchaddons.distributions.constraints.LowerBound.allow_equal"><code class="name">var <span class="ident">allow_equal</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>If True, equal values are allowed.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def allow_equal(self) -&gt; bool:
+    &#34;&#34;&#34;If True, equal values are allowed.&#34;&#34;&#34;
+    return self._allow_equal</code></pre>
+</details>
+</dd>
+<dt id="torchaddons.distributions.constraints.LowerBound.bound"><code class="name">var <span class="ident">bound</span> : torch.Tensor</code></dt>
+<dd>
+<div class="desc"><p>Bound.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bound(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Bound.&#34;&#34;&#34;
+    return self._bound</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="torchaddons.distributions.constraints.LowerBound.check"><code class="name flex">
@@ -268,6 +371,101 @@ to True.</dd>
     if self._scalar:
         return self._fn(value, self._bound)
     return self._fn(value, self._bound).all(-1)</code></pre>
+</details>
+</dd>
+<dt id="torchaddons.distributions.constraints.LowerBound.clone"><code class="name flex">
+<span>def <span class="ident">clone</span></span>(<span>self) ‑> torchaddons.distributions.constraints._lower_bound.LowerBound</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Clones the constraint.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>distributions.constraints.Base</code></dt>
+<dd>Cloned object.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def clone(self) -&gt; &#34;constraints.LowerBound&#34;:
+    return LowerBound(
+        self._bound.clone(),
+        self._allow_equal
+    )</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="torchaddons.distributions.constraints.UpperBound"><code class="flex name class">
+<span>class <span class="ident">UpperBound</span></span>
+<span>(</span><span>bound: torch.Tensor, allow_equal: bool = True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Upper bound constraint.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>bound</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Bound.</dd>
+<dt><strong><code>allow_equal</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If True, equal values are allowed. Defaults
+to True.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class UpperBound(constraints.LowerBound):
+    &#34;&#34;&#34;Upper bound constraint.&#34;&#34;&#34;
+
+    def check(self, value: torch.Tensor) -&gt; torch.Tensor:
+        return super().check(-value)
+
+    def clone(self) -&gt; &#34;constraints.UpperBound&#34;:
+        return UpperBound(
+            self.bound.clone(),
+            self.allow_equal
+        )</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torchaddons.distributions.constraints._lower_bound.LowerBound</li>
+<li>torchaddons.distributions.constraints._base.Base</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="torchaddons.distributions.constraints.UpperBound.check"><code class="name flex">
+<span>def <span class="ident">check</span></span>(<span>self, value: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check(self, value: torch.Tensor) -&gt; torch.Tensor:
+    return super().check(-value)</code></pre>
+</details>
+</dd>
+<dt id="torchaddons.distributions.constraints.UpperBound.clone"><code class="name flex">
+<span>def <span class="ident">clone</span></span>(<span>self) ‑> torchaddons.distributions.constraints._upper_bound.UpperBound</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Clones the constraint.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>distributions.constraints.Base</code></dt>
+<dd>Cloned object.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def clone(self) -&gt; &#34;constraints.UpperBound&#34;:
+    return UpperBound(
+        self.bound.clone(),
+        self.allow_equal
+    )</code></pre>
 </details>
 </dd>
 </dl>
@@ -293,19 +491,31 @@ to True.</dd>
 <ul class="">
 <li><code><a title="torchaddons.distributions.constraints.Base.apply_to" href="#torchaddons.distributions.constraints.Base.apply_to">apply_to</a></code></li>
 <li><code><a title="torchaddons.distributions.constraints.Base.check" href="#torchaddons.distributions.constraints.Base.check">check</a></code></li>
+<li><code><a title="torchaddons.distributions.constraints.Base.clone" href="#torchaddons.distributions.constraints.Base.clone">clone</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="torchaddons.distributions.constraints.CategoricalMask" href="#torchaddons.distributions.constraints.CategoricalMask">CategoricalMask</a></code></h4>
 <ul class="">
 <li><code><a title="torchaddons.distributions.constraints.CategoricalMask.check" href="#torchaddons.distributions.constraints.CategoricalMask.check">check</a></code></li>
+<li><code><a title="torchaddons.distributions.constraints.CategoricalMask.clone" href="#torchaddons.distributions.constraints.CategoricalMask.clone">clone</a></code></li>
 <li><code><a title="torchaddons.distributions.constraints.CategoricalMask.mask" href="#torchaddons.distributions.constraints.CategoricalMask.mask">mask</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="torchaddons.distributions.constraints.LowerBound" href="#torchaddons.distributions.constraints.LowerBound">LowerBound</a></code></h4>
 <ul class="">
+<li><code><a title="torchaddons.distributions.constraints.LowerBound.allow_equal" href="#torchaddons.distributions.constraints.LowerBound.allow_equal">allow_equal</a></code></li>
+<li><code><a title="torchaddons.distributions.constraints.LowerBound.bound" href="#torchaddons.distributions.constraints.LowerBound.bound">bound</a></code></li>
 <li><code><a title="torchaddons.distributions.constraints.LowerBound.check" href="#torchaddons.distributions.constraints.LowerBound.check">check</a></code></li>
+<li><code><a title="torchaddons.distributions.constraints.LowerBound.clone" href="#torchaddons.distributions.constraints.LowerBound.clone">clone</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="torchaddons.distributions.constraints.UpperBound" href="#torchaddons.distributions.constraints.UpperBound">UpperBound</a></code></h4>
+<ul class="">
+<li><code><a title="torchaddons.distributions.constraints.UpperBound.check" href="#torchaddons.distributions.constraints.UpperBound.check">check</a></code></li>
+<li><code><a title="torchaddons.distributions.constraints.UpperBound.clone" href="#torchaddons.distributions.constraints.UpperBound.clone">clone</a></code></li>
 </ul>
 </li>
 </ul>

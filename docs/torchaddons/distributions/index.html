@@ -29,11 +29,12 @@
 <pre><code class="python">from ._base import Base
 from ._rejection_sampler import RejectionSampler
 from ._categorical import Categorical
+from ._normal import Normal
 
 from . import constraints
 
 
-__all__ = [&#34;Base&#34;, &#34;RejectionSampler&#34;, &#34;Categorical&#34;, &#34;constraints&#34;]</code></pre>
+__all__ = [&#34;Base&#34;, &#34;RejectionSampler&#34;, &#34;Categorical&#34;, &#34;Normal&#34;, &#34;constraints&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -122,6 +123,7 @@ __all__ = [&#34;Base&#34;, &#34;RejectionSampler&#34;, &#34;Categorical&#34;, &#
 <h3>Subclasses</h3>
 <ul class="hlist">
 <li>torchaddons.distributions._categorical.Categorical</li>
+<li>torchaddons.distributions._normal.Normal</li>
 <li>torchaddons.distributions._rejection_sampler.RejectionSampler</li>
 </ul>
 <h3>Instance variables</h3>
@@ -453,6 +455,133 @@ this argument prepends <em>further</em> batches.</dd>
 </dd>
 </dl>
 </dd>
+<dt id="torchaddons.distributions.Normal"><code class="flex name class">
+<span>class <span class="ident">Normal</span></span>
+<span>(</span><span>mean: torch.Tensor, cov: torch.Tensor)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Base class for distributions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Normal(distributions.Base):
+    def __init__(self, mean: torch.Tensor, cov: torch.Tensor) -&gt; None:
+        super().__init__()
+        self._mean = mean
+        self._cov = cov
+        self._d = torch.distributions.MultivariateNormal(mean, cov)
+
+    def sample(self, *shape: Tuple[int, ...]) -&gt; torch.Tensor:
+        return self._d.sample(shape)
+
+    def clone(self) -&gt; &#34;distributions.Normal&#34;:
+        return Normal(
+            self._mean.clone(),
+            self._cov.clone()
+        )
+    
+    @property
+    def is_continuous(self) -&gt; bool:
+        return True
+
+    @property
+    def is_discrete(self) -&gt; bool:
+        return False
+
+    @property
+    def shape(self) -&gt; Tuple[int, ...]:
+        return self._mean.shape</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torchaddons.distributions._base.Base</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="torchaddons.distributions.Normal.is_continuous"><code class="name">var <span class="ident">is_continuous</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>True if the distribution is continuous.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def is_continuous(self) -&gt; bool:
+    return True</code></pre>
+</details>
+</dd>
+<dt id="torchaddons.distributions.Normal.is_discrete"><code class="name">var <span class="ident">is_discrete</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>True if the distribution is discrete.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def is_discrete(self) -&gt; bool:
+    return False</code></pre>
+</details>
+</dd>
+<dt id="torchaddons.distributions.Normal.shape"><code class="name">var <span class="ident">shape</span> : Tuple[int, ...]</code></dt>
+<dd>
+<div class="desc"><p>Shape of the output, if called with no extra batch dimensions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def shape(self) -&gt; Tuple[int, ...]:
+    return self._mean.shape</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="torchaddons.distributions.Normal.clone"><code class="name flex">
+<span>def <span class="ident">clone</span></span>(<span>self) ‑> torchaddons.distributions._normal.Normal</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def clone(self) -&gt; &#34;distributions.Normal&#34;:
+    return Normal(
+        self._mean.clone(),
+        self._cov.clone()
+    )</code></pre>
+</details>
+</dd>
+<dt id="torchaddons.distributions.Normal.sample"><code class="name flex">
+<span>def <span class="ident">sample</span></span>(<span>self, *shape: Tuple[int, ...]) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Samples the distribution.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>shape</code></strong> :&ensp;<code>Tuple[int, &hellip;]</code></dt>
+<dd>Batch dimensions to prepend to the output. Defaults
+to none. If the distribution was parametrized using batch data, then
+this argument prepends <em>further</em> batches.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>torch.Tensor</code></dt>
+<dd>Random sample.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sample(self, *shape: Tuple[int, ...]) -&gt; torch.Tensor:
+    return self._d.sample(shape)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
 <dt id="torchaddons.distributions.RejectionSampler"><code class="flex name class">
 <span>class <span class="ident">RejectionSampler</span></span>
 <span>(</span><span>distribution: torchaddons.distributions._base.Base, *constraints: torchaddons.distributions.constraints._base.Base)</span>
@@ -505,25 +634,38 @@ this argument prepends <em>further</em> batches.</dd>
         &#34;&#34;&#34;
         self._constraints.append(constraint)
 
-    def sample(self, shape: Tuple[int, ...] = ()) -&gt; torch.Tensor:
+    def sample(self, *shape: Tuple[int, ...]) -&gt; torch.Tensor:
         def get_reducer(value: torch.Tensor):
             def reducer(
                 mask: torch.Tensor, constraint: distributions.constraints.Base
             ) -&gt; torch.Tensor:
-                return mask &amp; constraint.check()
+                return mask &amp; constraint.check(value)
 
             return reducer
 
-        value = None
-        mask = torch.zeros(shape + self.shape, dtype=torch.bool, device=value.device)
-        while not mask.all():
-            value = super().sample(shape)
-            mask = functools.reduce(
-                get_reducer(value),
+        value = self._distribution.sample(*shape)
+        inv_mask = ~functools.reduce(
+            get_reducer(value),
+            self._constraints,
+            torch.ones(shape, dtype=torch.bool, device=value.device),
+        )
+        while inv_mask.any():
+            value[inv_mask] = self._distribution.sample(inv_mask.sum())
+            inv_mask[inv_mask.clone()] = ~ functools.reduce(
+                get_reducer(value[inv_mask]),
                 self._constraints,
-                torch.zeros(shape + self.shape, dtype=torch.bool, device=value.device),
+                torch.ones(inv_mask.sum(), dtype=torch.bool, device=value.device),
             )
-        return value</code></pre>
+        return value
+
+    @property
+    def shape(self) -&gt; Tuple[int, ...]:
+        return self._distribution.shape
+
+    def clone(self) -&gt; &#34;RejectionSampler&#34;:
+        return RejectionSampler(
+            self._distribution.clone(), *(x.clone() for x in self._constraints)
+        )</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -556,6 +698,18 @@ def is_discrete(self) -&gt; bool:
     return self._distribution.is_discrete</code></pre>
 </details>
 </dd>
+<dt id="torchaddons.distributions.RejectionSampler.shape"><code class="name">var <span class="ident">shape</span> : Tuple[int, ...]</code></dt>
+<dd>
+<div class="desc"><p>Shape of the output, if called with no extra batch dimensions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def shape(self) -&gt; Tuple[int, ...]:
+    return self._distribution.shape</code></pre>
+</details>
+</dd>
 </dl>
 <h3>Methods</h3>
 <dl>
@@ -582,8 +736,23 @@ def is_discrete(self) -&gt; bool:
     self._constraints.append(constraint)</code></pre>
 </details>
 </dd>
+<dt id="torchaddons.distributions.RejectionSampler.clone"><code class="name flex">
+<span>def <span class="ident">clone</span></span>(<span>self) ‑> torchaddons.distributions._rejection_sampler.RejectionSampler</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def clone(self) -&gt; &#34;RejectionSampler&#34;:
+    return RejectionSampler(
+        self._distribution.clone(), *(x.clone() for x in self._constraints)
+    )</code></pre>
+</details>
+</dd>
 <dt id="torchaddons.distributions.RejectionSampler.sample"><code class="name flex">
-<span>def <span class="ident">sample</span></span>(<span>self, shape: Tuple[int, ...] = ()) ‑> torch.Tensor</span>
+<span>def <span class="ident">sample</span></span>(<span>self, *shape: Tuple[int, ...]) ‑> torch.Tensor</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Samples the distribution.</p>
@@ -603,23 +772,27 @@ this argument prepends <em>further</em> batches.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def sample(self, shape: Tuple[int, ...] = ()) -&gt; torch.Tensor:
+<pre><code class="python">def sample(self, *shape: Tuple[int, ...]) -&gt; torch.Tensor:
     def get_reducer(value: torch.Tensor):
         def reducer(
             mask: torch.Tensor, constraint: distributions.constraints.Base
         ) -&gt; torch.Tensor:
-            return mask &amp; constraint.check()
+            return mask &amp; constraint.check(value)
 
         return reducer
 
-    value = None
-    mask = torch.zeros(shape + self.shape, dtype=torch.bool, device=value.device)
-    while not mask.all():
-        value = super().sample(shape)
-        mask = functools.reduce(
-            get_reducer(value),
+    value = self._distribution.sample(*shape)
+    inv_mask = ~functools.reduce(
+        get_reducer(value),
+        self._constraints,
+        torch.ones(shape, dtype=torch.bool, device=value.device),
+    )
+    while inv_mask.any():
+        value[inv_mask] = self._distribution.sample(inv_mask.sum())
+        inv_mask[inv_mask.clone()] = ~ functools.reduce(
+            get_reducer(value[inv_mask]),
             self._constraints,
-            torch.zeros(shape + self.shape, dtype=torch.bool, device=value.device),
+            torch.ones(inv_mask.sum(), dtype=torch.bool, device=value.device),
         )
     return value</code></pre>
 </details>
@@ -671,12 +844,24 @@ this argument prepends <em>further</em> batches.</dd>
 </ul>
 </li>
 <li>
-<h4><code><a title="torchaddons.distributions.RejectionSampler" href="#torchaddons.distributions.RejectionSampler">RejectionSampler</a></code></h4>
+<h4><code><a title="torchaddons.distributions.Normal" href="#torchaddons.distributions.Normal">Normal</a></code></h4>
 <ul class="">
+<li><code><a title="torchaddons.distributions.Normal.clone" href="#torchaddons.distributions.Normal.clone">clone</a></code></li>
+<li><code><a title="torchaddons.distributions.Normal.is_continuous" href="#torchaddons.distributions.Normal.is_continuous">is_continuous</a></code></li>
+<li><code><a title="torchaddons.distributions.Normal.is_discrete" href="#torchaddons.distributions.Normal.is_discrete">is_discrete</a></code></li>
+<li><code><a title="torchaddons.distributions.Normal.sample" href="#torchaddons.distributions.Normal.sample">sample</a></code></li>
+<li><code><a title="torchaddons.distributions.Normal.shape" href="#torchaddons.distributions.Normal.shape">shape</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="torchaddons.distributions.RejectionSampler" href="#torchaddons.distributions.RejectionSampler">RejectionSampler</a></code></h4>
+<ul class="two-column">
 <li><code><a title="torchaddons.distributions.RejectionSampler.add_constraint" href="#torchaddons.distributions.RejectionSampler.add_constraint">add_constraint</a></code></li>
+<li><code><a title="torchaddons.distributions.RejectionSampler.clone" href="#torchaddons.distributions.RejectionSampler.clone">clone</a></code></li>
 <li><code><a title="torchaddons.distributions.RejectionSampler.is_continuous" href="#torchaddons.distributions.RejectionSampler.is_continuous">is_continuous</a></code></li>
 <li><code><a title="torchaddons.distributions.RejectionSampler.is_discrete" href="#torchaddons.distributions.RejectionSampler.is_discrete">is_discrete</a></code></li>
 <li><code><a title="torchaddons.distributions.RejectionSampler.sample" href="#torchaddons.distributions.RejectionSampler.sample">sample</a></code></li>
+<li><code><a title="torchaddons.distributions.RejectionSampler.shape" href="#torchaddons.distributions.RejectionSampler.shape">shape</a></code></li>
 </ul>
 </li>
 </ul>
