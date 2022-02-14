@@ -27,10 +27,11 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">from ._base import Base
-from ._discrete_mask import DiscreteMask
+from ._categorical_mask import CategoricalMask
+from ._lower_bound import LowerBound
 
 
-__all__ = [&#34;Base&#34;, &#34;DiscreteMask&#34;]</code></pre>
+__all__ = [&#34;Base&#34;, &#34;CategoricalMask&#34;, &#34;LowerBound&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -83,7 +84,8 @@ __all__ = [&#34;Base&#34;, &#34;DiscreteMask&#34;]</code></pre>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
-<li>torchaddons.distributions.constraints._discrete_mask.DiscreteMask</li>
+<li>torchaddons.distributions.constraints._categorical_mask.CategoricalMask</li>
+<li>torchaddons.distributions.constraints._lower_bound.LowerBound</li>
 </ul>
 <h3>Methods</h3>
 <dl>
@@ -146,8 +148,8 @@ def check(self, value: torch.Tensor) -&gt; torch.Tensor:
 </dd>
 </dl>
 </dd>
-<dt id="torchaddons.distributions.constraints.DiscreteMask"><code class="flex name class">
-<span>class <span class="ident">DiscreteMask</span></span>
+<dt id="torchaddons.distributions.constraints.CategoricalMask"><code class="flex name class">
+<span>class <span class="ident">CategoricalMask</span></span>
 <span>(</span><span>mask: torch.Tensor)</span>
 </code></dt>
 <dd>
@@ -156,7 +158,7 @@ def check(self, value: torch.Tensor) -&gt; torch.Tensor:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class DiscreteMask(constraints.Base):
+<pre><code class="python">class CategoricalMask(constraints.Base):
     def __init__(self, mask: torch.Tensor) -&gt; None:
         super().__init__()
         self._mask = mask
@@ -176,7 +178,7 @@ def check(self, value: torch.Tensor) -&gt; torch.Tensor:
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="torchaddons.distributions.constraints.DiscreteMask.mask"><code class="name">var <span class="ident">mask</span> : torch.Tensor</code></dt>
+<dt id="torchaddons.distributions.constraints.CategoricalMask.mask"><code class="name">var <span class="ident">mask</span> : torch.Tensor</code></dt>
 <dd>
 <div class="desc"><p>Boolean mask</p></div>
 <details class="source">
@@ -192,7 +194,7 @@ def mask(self) -&gt; torch.Tensor:
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="torchaddons.distributions.constraints.DiscreteMask.check"><code class="name flex">
+<dt id="torchaddons.distributions.constraints.CategoricalMask.check"><code class="name flex">
 <span>def <span class="ident">check</span></span>(<span>self, value: torch.Tensor) ‑> torch.Tensor</span>
 </code></dt>
 <dd>
@@ -203,6 +205,69 @@ def mask(self) -&gt; torch.Tensor:
 </summary>
 <pre><code class="python">def check(self, value: torch.Tensor) -&gt; torch.Tensor:
     raise NotImplementedError</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="torchaddons.distributions.constraints.LowerBound"><code class="flex name class">
+<span>class <span class="ident">LowerBound</span></span>
+<span>(</span><span>bound: torch.Tensor, allow_equal: bool = True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Lower bound constraint.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>bound</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Lower bound, all elements must be greater (or equal)
+than this value.</dd>
+<dt><strong><code>allow_equal</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If True, equal values are allowed. Defaults
+to True.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LowerBound(constraints.Base):
+    &#34;&#34;&#34;Lower bound constraint.&#34;&#34;&#34;
+    def __init__(self, bound: torch.Tensor, allow_equal: bool = True) -&gt; None:
+        &#34;&#34;&#34;
+        Args:
+            bound (torch.Tensor): Lower bound, all elements must be greater (or equal)
+                than this value.
+            allow_equal (bool, optional): If True, equal values are allowed. Defaults
+                to True.
+        &#34;&#34;&#34;
+        super().__init__()
+        self._bound = bound
+        self._scalar = len(bound.shape) == 0
+        self._fn = torch.ge if allow_equal else torch.gt
+
+    def check(self, value: torch.Tensor) -&gt; torch.Tensor:
+        if self._scalar:
+            return self._fn(value, self._bound)
+        return self._fn(value, self._bound).all(-1)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torchaddons.distributions.constraints._base.Base</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="torchaddons.distributions.constraints.LowerBound.check"><code class="name flex">
+<span>def <span class="ident">check</span></span>(<span>self, value: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check(self, value: torch.Tensor) -&gt; torch.Tensor:
+    if self._scalar:
+        return self._fn(value, self._bound)
+    return self._fn(value, self._bound).all(-1)</code></pre>
 </details>
 </dd>
 </dl>
@@ -231,10 +296,16 @@ def mask(self) -&gt; torch.Tensor:
 </ul>
 </li>
 <li>
-<h4><code><a title="torchaddons.distributions.constraints.DiscreteMask" href="#torchaddons.distributions.constraints.DiscreteMask">DiscreteMask</a></code></h4>
+<h4><code><a title="torchaddons.distributions.constraints.CategoricalMask" href="#torchaddons.distributions.constraints.CategoricalMask">CategoricalMask</a></code></h4>
 <ul class="">
-<li><code><a title="torchaddons.distributions.constraints.DiscreteMask.check" href="#torchaddons.distributions.constraints.DiscreteMask.check">check</a></code></li>
-<li><code><a title="torchaddons.distributions.constraints.DiscreteMask.mask" href="#torchaddons.distributions.constraints.DiscreteMask.mask">mask</a></code></li>
+<li><code><a title="torchaddons.distributions.constraints.CategoricalMask.check" href="#torchaddons.distributions.constraints.CategoricalMask.check">check</a></code></li>
+<li><code><a title="torchaddons.distributions.constraints.CategoricalMask.mask" href="#torchaddons.distributions.constraints.CategoricalMask.mask">mask</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="torchaddons.distributions.constraints.LowerBound" href="#torchaddons.distributions.constraints.LowerBound">LowerBound</a></code></h4>
+<ul class="">
+<li><code><a title="torchaddons.distributions.constraints.LowerBound.check" href="#torchaddons.distributions.constraints.LowerBound.check">check</a></code></li>
 </ul>
 </li>
 </ul>
