@@ -8,6 +8,10 @@ class CategoricalMask(constraints.Base):
         super().__init__()
         self._mask = mask
 
+    @property
+    def dim(self) -> int:
+        return self._mask.shape[-1]
+
     def check(self, value: torch.Tensor) -> torch.Tensor:
         # This method is not yet implemented as it is easy to simply apply the mask
         # to a distribution and get a closed form expression for the masked

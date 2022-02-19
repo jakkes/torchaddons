@@ -19,6 +19,10 @@ class LowerBound(constraints.Base):
         self._fn = torch.ge if allow_equal else torch.gt
 
     @property
+    def dim(self) -> int:
+        return 0 if self._scalar else self._bound.shape[-1]
+
+    @property
     def bound(self) -> torch.Tensor:
         """Bound."""
         return self._bound

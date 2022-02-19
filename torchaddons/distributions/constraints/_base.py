@@ -11,6 +11,12 @@ class Base(abc.ABC):
     def check(self, value: torch.Tensor) -> torch.Tensor:
         pass
 
+    @abc.abstractmethod
+    @property
+    def dim(self) -> int:
+        """Dimension of the constraint space."""
+        pass
+
     def apply_to(self, distribution: "distributions.Base", allow_inplace: bool=True) -> "distributions.Base":
         """Applies the constraint to a distribution.
 
