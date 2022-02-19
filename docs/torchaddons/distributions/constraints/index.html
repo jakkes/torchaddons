@@ -61,6 +61,12 @@ __all__ = [&#34;Base&#34;, &#34;CategoricalMask&#34;, &#34;LowerBound&#34;, &#34
     def check(self, value: torch.Tensor) -&gt; torch.Tensor:
         pass
 
+    @property
+    @abc.abstractmethod
+    def dim(self) -&gt; int:
+        &#34;&#34;&#34;Dimension of the constraint space.&#34;&#34;&#34;
+        pass
+
     def apply_to(self, distribution: &#34;distributions.Base&#34;, allow_inplace: bool=True) -&gt; &#34;distributions.Base&#34;:
         &#34;&#34;&#34;Applies the constraint to a distribution.
 
@@ -99,6 +105,23 @@ __all__ = [&#34;Base&#34;, &#34;CategoricalMask&#34;, &#34;LowerBound&#34;, &#34
 <li>torchaddons.distributions.constraints._empty.Empty</li>
 <li>torchaddons.distributions.constraints._lower_bound.LowerBound</li>
 </ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="torchaddons.distributions.constraints.Base.dim"><code class="name">var <span class="ident">dim</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Dimension of the constraint space.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+@abc.abstractmethod
+def dim(self) -&gt; int:
+    &#34;&#34;&#34;Dimension of the constraint space.&#34;&#34;&#34;
+    pass</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="torchaddons.distributions.constraints.Base.apply_to"><code class="name flex">
@@ -199,6 +222,10 @@ def clone(self) -&gt; &#34;distributions.constraints.Base&#34;:
         super().__init__()
         self._mask = mask
 
+    @property
+    def dim(self) -&gt; int:
+        return self._mask.shape[-1]
+
     def check(self, value: torch.Tensor) -&gt; torch.Tensor:
         # This method is not yet implemented as it is easy to simply apply the mask
         # to a distribution and get a closed form expression for the masked
@@ -220,6 +247,18 @@ def clone(self) -&gt; &#34;distributions.constraints.Base&#34;:
 </ul>
 <h3>Instance variables</h3>
 <dl>
+<dt id="torchaddons.distributions.constraints.CategoricalMask.dim"><code class="name">var <span class="ident">dim</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Dimension of the constraint space.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dim(self) -&gt; int:
+    return self._mask.shape[-1]</code></pre>
+</details>
+</dd>
 <dt id="torchaddons.distributions.constraints.CategoricalMask.mask"><code class="name">var <span class="ident">mask</span> : torch.Tensor</code></dt>
 <dd>
 <div class="desc"><p>Boolean mask</p></div>
@@ -274,26 +313,62 @@ def mask(self) -&gt; torch.Tensor:
 </dd>
 <dt id="torchaddons.distributions.constraints.Empty"><code class="flex name class">
 <span>class <span class="ident">Empty</span></span>
+<span>(</span><span>dim: int)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Constraint class imposing no constraints.</p></div>
+<div class="desc"><p>Constraint class imposing no constraints, only the dimension of the vector.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>dim</code></strong> :&ensp;<code>int</code></dt>
+<dd>Dimension of vectors.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Empty(constraints.Base):
-    &#34;&#34;&#34;Constraint class imposing no constraints.&#34;&#34;&#34;
+    &#34;&#34;&#34;Constraint class imposing no constraints, only the dimension of the vector.&#34;&#34;&#34;
+    
+    def __init__(self, dim: int) -&gt; None:
+        &#34;&#34;&#34;
+        Args:
+            dim (int): Dimension of vectors.
+        &#34;&#34;&#34;
+        super().__init__()
+        self._dim = dim
+
+    @property
+    def dim(self) -&gt; int:
+        return self._dim
+
     def check(self, value: torch.Tensor) -&gt; torch.Tensor:
+        if value.shape[-1] != self._dim:
+            return torch.zeros(value.shape[:-1], dtype=torch.bool, device=value.device)
         return torch.ones(value.shape[:-1], dtype=torch.bool, device=value.device)
 
     def clone(self) -&gt; &#34;Empty&#34;:
-        return Empty()</code></pre>
+        return Empty(self._dim)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>torchaddons.distributions.constraints._base.Base</li>
 <li>abc.ABC</li>
 </ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="torchaddons.distributions.constraints.Empty.dim"><code class="name">var <span class="ident">dim</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Dimension of the constraint space.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dim(self) -&gt; int:
+    return self._dim</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="torchaddons.distributions.constraints.Empty.check"><code class="name flex">
@@ -306,6 +381,8 @@ def mask(self) -&gt; torch.Tensor:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def check(self, value: torch.Tensor) -&gt; torch.Tensor:
+    if value.shape[-1] != self._dim:
+        return torch.zeros(value.shape[:-1], dtype=torch.bool, device=value.device)
     return torch.ones(value.shape[:-1], dtype=torch.bool, device=value.device)</code></pre>
 </details>
 </dd>
@@ -324,7 +401,7 @@ def mask(self) -&gt; torch.Tensor:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def clone(self) -&gt; &#34;Empty&#34;:
-    return Empty()</code></pre>
+    return Empty(self._dim)</code></pre>
 </details>
 </dd>
 </dl>
@@ -361,6 +438,10 @@ to True.</dd>
         self._allow_equal = allow_equal
         self._scalar = len(bound.shape) == 0
         self._fn = torch.ge if allow_equal else torch.gt
+
+    @property
+    def dim(self) -&gt; int:
+        return 0 if self._scalar else self._bound.shape[-1]
 
     @property
     def bound(self) -&gt; torch.Tensor:
@@ -418,6 +499,18 @@ def allow_equal(self) -&gt; bool:
 def bound(self) -&gt; torch.Tensor:
     &#34;&#34;&#34;Bound.&#34;&#34;&#34;
     return self._bound</code></pre>
+</details>
+</dd>
+<dt id="torchaddons.distributions.constraints.LowerBound.dim"><code class="name">var <span class="ident">dim</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Dimension of the constraint space.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dim(self) -&gt; int:
+    return 0 if self._scalar else self._bound.shape[-1]</code></pre>
 </details>
 </dd>
 </dl>
@@ -557,6 +650,7 @@ to True.</dd>
 <li><code><a title="torchaddons.distributions.constraints.Base.apply_to" href="#torchaddons.distributions.constraints.Base.apply_to">apply_to</a></code></li>
 <li><code><a title="torchaddons.distributions.constraints.Base.check" href="#torchaddons.distributions.constraints.Base.check">check</a></code></li>
 <li><code><a title="torchaddons.distributions.constraints.Base.clone" href="#torchaddons.distributions.constraints.Base.clone">clone</a></code></li>
+<li><code><a title="torchaddons.distributions.constraints.Base.dim" href="#torchaddons.distributions.constraints.Base.dim">dim</a></code></li>
 </ul>
 </li>
 <li>
@@ -564,6 +658,7 @@ to True.</dd>
 <ul class="">
 <li><code><a title="torchaddons.distributions.constraints.CategoricalMask.check" href="#torchaddons.distributions.constraints.CategoricalMask.check">check</a></code></li>
 <li><code><a title="torchaddons.distributions.constraints.CategoricalMask.clone" href="#torchaddons.distributions.constraints.CategoricalMask.clone">clone</a></code></li>
+<li><code><a title="torchaddons.distributions.constraints.CategoricalMask.dim" href="#torchaddons.distributions.constraints.CategoricalMask.dim">dim</a></code></li>
 <li><code><a title="torchaddons.distributions.constraints.CategoricalMask.mask" href="#torchaddons.distributions.constraints.CategoricalMask.mask">mask</a></code></li>
 </ul>
 </li>
@@ -572,6 +667,7 @@ to True.</dd>
 <ul class="">
 <li><code><a title="torchaddons.distributions.constraints.Empty.check" href="#torchaddons.distributions.constraints.Empty.check">check</a></code></li>
 <li><code><a title="torchaddons.distributions.constraints.Empty.clone" href="#torchaddons.distributions.constraints.Empty.clone">clone</a></code></li>
+<li><code><a title="torchaddons.distributions.constraints.Empty.dim" href="#torchaddons.distributions.constraints.Empty.dim">dim</a></code></li>
 </ul>
 </li>
 <li>
@@ -581,6 +677,7 @@ to True.</dd>
 <li><code><a title="torchaddons.distributions.constraints.LowerBound.bound" href="#torchaddons.distributions.constraints.LowerBound.bound">bound</a></code></li>
 <li><code><a title="torchaddons.distributions.constraints.LowerBound.check" href="#torchaddons.distributions.constraints.LowerBound.check">check</a></code></li>
 <li><code><a title="torchaddons.distributions.constraints.LowerBound.clone" href="#torchaddons.distributions.constraints.LowerBound.clone">clone</a></code></li>
+<li><code><a title="torchaddons.distributions.constraints.LowerBound.dim" href="#torchaddons.distributions.constraints.LowerBound.dim">dim</a></code></li>
 </ul>
 </li>
 <li>
