@@ -9,6 +9,9 @@ class CategoricalMask(constraints.Base):
         self._mask = mask
 
     def check(self, value: torch.Tensor) -> torch.Tensor:
+        # This method is not yet implemented as it is easy to simply apply the mask
+        # to a distribution and get a closed form expression for the masked
+        # distribution. If you need this, you are very welcome to make a pull request.
         raise NotImplementedError
 
     @property
